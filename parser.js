@@ -56,4 +56,19 @@ function splitter(photos) {
     };
 }
 
-readDataFile(fileName).then(splitter).then(console.log);
+function buildTableOfScroing(photos) {
+    const table = new Map();
+    for (const i = 0; i < photos.length; i++) {
+        for (const j = i; j < photos.length; j++) {
+            table.set(`${i}:${j}`, Math.random());
+        }
+    }
+    return table;
+}
+
+readDataFile(fileName)
+    .then(splitter)
+    .then((photos) => {
+        return buildTableOfScroing(photos.v);
+    })
+    .then(console.log);
