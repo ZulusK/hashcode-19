@@ -56,10 +56,10 @@ function splitter(photos) {
     };
 }
 
-function buildTableOfScroing(photos) {
+function buildTableOfScoring(photos) {
     const table = new Map();
-    for (const i = 0; i < photos.length; i++) {
-        for (const j = i; j < photos.length; j++) {
+    for (let i = 0; i < photos.length; i++) {
+        for (let j = i; j < photos.length; j++) {
             table.set(`${i}:${j}`, Math.random());
         }
     }
@@ -67,8 +67,8 @@ function buildTableOfScroing(photos) {
 }
 
 readDataFile(fileName)
-    .then(splitter)
     .then((photos) => {
-        return buildTableOfScroing(photos.v);
-    })
-    .then(console.log);
+        const { v, h } = splitter(photos);
+        const table = buildTableOfScoring(v);
+        console.log(table)
+    });
