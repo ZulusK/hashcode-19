@@ -9,3 +9,5 @@ const comparePhoto = (photo, other) => {
     return Math.min(photo.tags.length - owerage, owerage, other.tags.length - owerage);
 };
 
+
+module.exports = comparePhoto;

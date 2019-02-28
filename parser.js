@@ -1,6 +1,7 @@
 const fileName = process.argv[process.argv.length - 1];
 const readline = require('linebyline');
 const _ = require('lodash');
+const comparePhotos = require('./comparePhoto');
 
 function readDataFile(filename) {
     const rl = readline(`./${fileName}`);
@@ -57,18 +58,27 @@ function splitter(photos) {
 }
 
 function buildTableOfScoring(photos) {
-    const table = new Map();
+    const table = {};
     for (let i = 0; i < photos.length; i++) {
-        for (let j = i; j < photos.length; j++) {
-            table.set(`${i}:${j}`, Math.random());
+        for (let j = i + 1; j < photos.length; j++) {
+            table[`${i}:${j}`] = comparePhotos(photos[i], photos[j]);
         }
     }
     return table;
+}
+
+function getAverage(table) {
+    const size = Object.keys(table).length;
+    return _.reduce(table, (memo, v, k) => {
+        return memo + v / size;
+    }, 0);
 }
 
 readDataFile(fileName)
     .then((photos) => {
         const { v, h } = splitter(photos);
         const table = buildTableOfScoring(v);
+        const average = getAverage(table);
         console.log(table)
+        console.log(average);
     });
