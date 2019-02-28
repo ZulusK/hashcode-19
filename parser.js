@@ -1,5 +1,6 @@
 const fileName = process.argv[process.argv.length - 1];
 const readline = require('linebyline');
+const _ = require('lodash');
 
 function readDataFile(filename) {
     const rl = readline(`./${fileName}`);
@@ -38,4 +39,21 @@ function readDataFile(filename) {
     });
 }
 
-readDataFile(fileName).then(console.log);
+
+function splitter(photos) {
+    const hphotos = [];
+    const vphotos = [];
+    for (const photo of photos) {
+        if (photo.o === 'H') {
+            hphotos.push(photo);
+        } else {
+            vphotos.push(photo);
+        }
+    }
+    return {
+        h: hphotos,
+        v: vphotos
+    };
+}
+
+readDataFile(fileName).then(splitter).then(console.log);
