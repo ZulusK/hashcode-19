@@ -85,6 +85,29 @@ function getAverage(table) {
     }, 0);
 }
 
+function createUniqArr(arr_1, arr_2){
+    for(let v of arr_2){
+        if(!arr_1.includes(v)) arr_1.push(v);
+    }
+    return arr_1;
+}
+
+function horizontalToSlides(h){
+    let slides = [];
+    
+    for(let i = 0; i < h.length; i+=2){
+        if(h[i] && h[i+1]){
+            slides.push({
+                id: -1,
+                id_1: h[i].id,
+                id_2: h[i+1].id,
+                o: 'V',
+                tags: createUniqArr(h[i].tags, h[i+1].tags), 
+            });
+        }
+    }
+
+    return slides;
 function getIdByClosest2Average(average, row, id) {
     let closestId = 0;
     let prevDiff = Number.POSITIVE_INFINITY;
@@ -129,6 +152,9 @@ function getNextId(table) {
 readDataFile(fileName)
     .then((photos) => {
         const { v, h } = splitter(photos);
+        const vSlides = horizontalToSlides(v);
+        v = null;
+        console.log("SLIDES: ", vSlides);
         const table = buildTableOfScoring(v);
         const average = getAverage(table);
         console.log('average', average);
