@@ -1,12 +1,15 @@
 const comparePhoto = (photo, other) => {
-    let owerage = 0;
-    const smallestArray = photo.tags.length >= other.tags.length ? other.tags : photo.tags;
-    const biggestArray = photo.tags.length >= other.tags.length ? photo.tags : other.tags;
-    smallestArray.forEach(el => {
-        if (biggestArray.find(val => val === el)) owerage++;
+    let average = 0;
+    if (!other.hashes) {
+        other.hashes = new Set();
+        other.tags.forEach(tag => other.hashes.add(tag));
+    }
+
+    photo.tags.forEach(tag => {
+        if (other.hashes.has(tag)) average++;
     });
 
-    return Math.min(photo.tags.length - owerage, owerage, other.tags.length - owerage);
+    return Math.min(photo.tags.length - average, average, other.tags.length - average);
 };
 
 

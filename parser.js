@@ -63,7 +63,14 @@ function buildTableOfScoring(photos) {
     for (let i = 0; i < photos.length; i++) {
         table[i] = {};
         for (let j = 0; j < photos.length; j++) {
-            table[i][j] = comparePhotos(photos[i], photos[j]);
+            if (j > i) {
+                table[i][j] = comparePhotos(photos[i], photos[j]);
+            } else {
+                table[i][j] = table[j][i];
+            }
+        }
+        if(i%100===0){
+            console.log(i)
         }
     }
     return table;
