@@ -74,11 +74,46 @@ function getAverage(table) {
     }, 0);
 }
 
+function getNextStart(size, usedIterations) {
+    if (usedIterations.size === size) {
+        return -1;
+    }
+    while (true) {
+        const rnd = Math.floor(size * Math.random());
+        if (!usedIterations.has(rnd)) {
+            usedIterations.add(rnd);
+            return rnd;
+        }
+    }
+}
+
+function runRandomIteration(table, usedIterations) {
+    const tmpTable = { ...table };
+    const size = Object.keys(table).length;
+    const sum = 0;
+    const startFrom = getNextStart(size, usedIterations);
+    if (startFrom < 0) {
+        return -1;
+    }
+    return startFrom;
+}
+
 readDataFile(fileName)
     .then((photos) => {
         const { v, h } = splitter(photos);
         const table = buildTableOfScoring(v);
         const average = getAverage(table);
-        console.log(table)
-        console.log(average);
+        console.log('average', average);
+        let max = 0;
+        let usedIterations = new Set();
+        for (let i = 0; i < 10000; i++) {
+            const currMax = runRandomIteration(table, usedIterations);
+            if (currMax > max) {
+                console.log(currMax);
+                max = currMax;
+            }
+        }
+        console.log('max', max);
+        const slides = [...h];
+        // console.log(slides.map(v => v.id));
     });
