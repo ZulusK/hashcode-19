@@ -2,6 +2,7 @@ const fileName = process.argv[process.argv.length - 1];
 const readline = require('linebyline');
 const _ = require('lodash');
 const comparePhotos = require('./comparePhoto');
+const faker = require('faker');
 
 function readDataFile(filename) {
     const rl = readline(`./${fileName}`);
@@ -60,42 +61,62 @@ function splitter(photos) {
 function buildTableOfScoring(photos) {
     const table = {};
     for (let i = 0; i < photos.length; i++) {
-        for (let j = i + 1; j < photos.length; j++) {
-            table[`${i}:${j}`] = comparePhotos(photos[i], photos[j]);
+        table[i] = {};
+        for (let j = 0; j < photos.length; j++) {
+            table[i][j] = comparePhotos(photos[i], photos[j]);
         }
     }
     return table;
 }
 
 function getAverage(table) {
-    const size = Object.keys(table).length;
-    return _.reduce(table, (memo, v, k) => {
-        return memo + v / size;
+    const size = Object.keys(table).length ** 2;
+    return _.reduce(table, (memo, row) => {
+        return memo + _.reduce(row, (m2, cell) => {
+            return m2 + cell / size;
+        }, 0);
     }, 0);
 }
 
-function getNextStart(size, usedIterations) {
-    if (usedIterations.size === size) {
-        return -1;
-    }
-    while (true) {
-        const rnd = Math.floor(size * Math.random());
-        if (!usedIterations.has(rnd)) {
-            usedIterations.add(rnd);
-            return rnd;
+function getIdByClosest2Average(average, row, id) {
+    let closestId = 0;
+    let prevDiff = Number.POSITIVE_INFINITY;
+    _.forEach(row, (v, k) => {
+        if (+k !== id && v > 0 && v - average < prevDiff) {
+            prevDiff = v - average;
+            closestId = k;
+        }
+    });
+    if (!Number.isFinite(prevDiff)) {
+        for (const key in row) {
+            if (key !== id) {
+                return key;
+            }
         }
     }
+    return closestId;
 }
 
-function runRandomIteration(table, usedIterations) {
-    const tmpTable = { ...table };
-    const size = Object.keys(table).length;
-    const sum = 0;
-    const startFrom = getNextStart(size, usedIterations);
-    if (startFrom < 0) {
-        return -1;
+function runRandomIteration(table, startFrom, average) {
+    const tmpTable = JSON.parse(JSON.stringify(table));
+    let sum = 0;
+    let currId = startFrom;
+    for (let i = 0; i < Object.keys(tmpTable).length; i++) {
+        const targetId = getIdByClosest2Average(average, tmpTable[currId], currId);
+        sum += tmpTable[currId][targetId];
+        delete tmpTable[currId];
+        delete tmpTable[targetId];
+        for (const key in tmpTable) {
+            delete tmpTable[key][targetId];
+            delete tmpTable[key][currId];
+        }
+        currId = getNextId(tmpTable);
     }
-    return startFrom;
+    return sum;
+}
+
+function getNextId(table) {
+    return faker.random.arrayElement(Object.keys(table));
 }
 
 readDataFile(fileName)
@@ -105,11 +126,13 @@ readDataFile(fileName)
         const average = getAverage(table);
         console.log('average', average);
         let max = 0;
-        let usedIterations = new Set();
-        for (let i = 0; i < 10000; i++) {
-            const currMax = runRandomIteration(table, usedIterations);
+        const size = Object.keys(table).length;
+        for (let i = 0; i < 100; i++) {
+            console.log('iter', i);
+            const startFrom = getNextId(table);
+            const currMax = runRandomIteration(table, startFrom, average);
+            console.log(currMax);
             if (currMax > max) {
-                console.log(currMax);
                 max = currMax;
             }
         }
