@@ -3,6 +3,7 @@ const readline = require('linebyline');
 const _ = require('lodash');
 const comparePhotos = require('./comparePhoto');
 const faker = require('faker');
+const fs = require('fs');
 
 function readDataFile(filename) {
     const rl = readline(`./${fileName}`);
@@ -60,19 +61,16 @@ function splitter(photos) {
 
 function buildTableOfScoring(photos) {
     const table = {};
-    for (let i = 0; i < photos.length; i++) {
-        table[i] = {};
-        for (let j = 0; j < photos.length; j++) {
-            if (j > i) {
-                table[i][j] = comparePhotos(photos[i], photos[j]);
-            } else {
-                table[i][j] = table[j][i];
-            }
-        }
-        if(i%100===0){
-            console.log(i)
-        }
-    }
+    let last = Date.now();
+    photos.forEach((a, i) => {
+        table[a.id] = {};
+        photos.forEach((b, j) => {
+            table[a.id][b.id] = comparePhotos(photos[i], photos[j]);
+        });
+        console.log(i, (Date.now() - last) / 1000);
+        last = Date.now();
+    });
+    fs.writeFileSync('./out.txt', JSON.stringify(table));
     return table;
 }
 
@@ -85,29 +83,31 @@ function getAverage(table) {
     }, 0);
 }
 
-function createUniqArr(arr_1, arr_2){
-    for(let v of arr_2){
-        if(!arr_1.includes(v)) arr_1.push(v);
+function createUniqArr(arr_1, arr_2) {
+    for (let v of arr_2) {
+        if (!arr_1.includes(v)) arr_1.push(v);
     }
     return arr_1;
 }
 
-function horizontalToSlides(h){
+function horizontalToSlides(h) {
     let slides = [];
-    
-    for(let i = 0; i < h.length; i+=2){
-        if(h[i] && h[i+1]){
+
+    for (let i = 0; i < h.length; i += 2) {
+        if (h[i] && h[i + 1]) {
             slides.push({
                 id: -1,
                 id_1: h[i].id,
-                id_2: h[i+1].id,
+                id_2: h[i + 1].id,
                 o: 'V',
-                tags: createUniqArr(h[i].tags, h[i+1].tags), 
+                tags: createUniqArr(h[i].tags, h[i + 1].tags),
             });
         }
     }
 
     return slides;
+}
+
 function getIdByClosest2Average(average, row, id) {
     let closestId = 0;
     let prevDiff = Number.POSITIVE_INFINITY;
@@ -131,9 +131,11 @@ function runRandomIteration(table, startFrom, average) {
     const tmpTable = JSON.parse(JSON.stringify(table));
     let sum = 0;
     let currId = startFrom;
+    const chain = [];
     for (let i = 0; i < Object.keys(tmpTable).length; i++) {
         const targetId = getIdByClosest2Average(average, tmpTable[currId], currId);
         sum += tmpTable[currId][targetId];
+        chain.push({ a: currId, b: targetId });
         delete tmpTable[currId];
         delete tmpTable[targetId];
         for (const key in tmpTable) {
@@ -142,7 +144,8 @@ function runRandomIteration(table, startFrom, average) {
         }
         currId = getNextId(tmpTable);
     }
-    return sum;
+
+    return { sum, chain };
 }
 
 function getNextId(table) {
@@ -151,25 +154,32 @@ function getNextId(table) {
 
 readDataFile(fileName)
     .then((photos) => {
-        const { v, h } = splitter(photos);
-        const vSlides = horizontalToSlides(v);
-        v = null;
-        console.log("SLIDES: ", vSlides);
+        let { v, h } = splitter(photos);
+        console.log('splitted');
         const table = buildTableOfScoring(v);
+        console.log('build table');
         const average = getAverage(table);
         console.log('average', average);
         let max = 0;
-        const size = Object.keys(table).length;
-        for (let i = 0; i < 100; i++) {
+        let maxChain = null;
+        for (let i = 0; i < 1000; i++) {
             console.log('iter', i);
             const startFrom = getNextId(table);
-            const currMax = runRandomIteration(table, startFrom, average);
-            console.log(currMax);
-            if (currMax > max) {
-                max = currMax;
+            const { sum, chain } = runRandomIteration(table, startFrom, average);
+            if (sum > max) {
+                max = sum;
+                maxChain = chain;
             }
         }
+
+        fs.writeFileSync('./out.txt', JSON.stringify(maxChain, null, 2));
         console.log('max', max);
-        const slides = [...h];
+        if (!maxChain) {
+            maxChain = [];
+        }
+        const result = maxChain.map(({ a, b }) => `${a} ${b}`).join('\n');
+        fs.writeFileSync('./result.txt', h.length + maxChain.length);
+        fs.appendFileSync('./result.txt', '\n' + h.map(v => v.id).join('\n'),);
+        fs.appendFileSync('./result.txt', '\n' + result);
         // console.log(slides.map(v => v.id));
     });
